@@ -1,24 +1,24 @@
 # 2pdownloader
 
-2pdownloader 是一个高效的多线程下载工具，支持分块下载和断点续传。
+2pdownloader is an efficient multi-threaded download tool that supports segmented downloads and resuming interrupted downloads.
 
-## 功能特性
-- 使用多线程加速下载
-- 支持断点续传
-- 自动合并下载的分块文件
-- 支持代理设置
+## Features
+- Accelerates downloads using multi-threading
+- Supports resuming interrupted downloads
+- Automatically merges downloaded file segments
+- Supports proxy settings
 
-## 使用方法
-1. 克隆仓库：
+## Usage
+1. Clone the repository:
    ```bash
    git clone https://github.com/2pcarrot/2pdownloader.git
    cd 2pdownloader
    ```
-2. 安装依赖：
+2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-3. 使用 `download_file` 函数下载文件：
+3. Use the `download_file` function to download files:
    ```python
    from core.core import download_file
 
@@ -26,15 +26,15 @@
    download_file(url, dest_folder="downloads", chunk_size_mb=20, max_workers=10)
    ```
 
-## 未来开发事项
-1. **制作图形化界面 (GUI)**  
-   - 计划为 2pdownloader 提供一个用户友好的图形化界面，以便更直观地管理下载任务。
+## Future Development
+1. **Create a Graphical User Interface (GUI)**  
+   - Plans to provide a user-friendly GUI for 2pdownloader to make download task management more intuitive.
 
-2. **支持插件**  
-   - 添加插件化支持，为用户提供自定义扩展功能的能力，例如支持更多的协议或自定义下载逻辑。
+2. **Support Plugins**  
+   - Add plugin support to allow custom extensions, such as supporting more protocols or custom download logic.
 
-## 贡献
-欢迎贡献代码！请提交 Pull Request 或报告问题。
+## Contribution
+Contributions are welcome! Please submit a Pull Request or report issues.
 
-## 许可证
-本项目使用 [MIT 许可证](LICENSE)。
+## License
+This project is licensed under the [MIT License](LICENSE).
