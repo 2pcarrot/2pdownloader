@@ -6,14 +6,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import unquote, urlparse
 from tqdm import tqdm
 import urllib3
+from datetime import timedelta
 
 class Downloader:
-    def __init__(self, download_dir=".", chunk_size_mb=20, max_workers=None, proxy_mode="system", proxies=None):
+    def __init__(self, download_dir=".", chunk_size_mb=20, max_workers=None, proxy_mode="system", proxies=None, progress_callback=None):
         self.download_dir = download_dir
         self.chunk_size_mb = chunk_size_mb
         self.max_workers = max_workers or (os.cpu_count() * 2)
         self.proxy_mode = proxy_mode
         self.proxies = proxies if proxy_mode == "manual" else self._detect_proxy()
+        self.progress_callback = progress_callback
 
     def _detect_proxy(self):
         proxies = {}
@@ -121,6 +123,7 @@ class Downloader:
         total_chunks = (file_size + chunk_size_bytes - 1) // chunk_size_bytes
         chunk_files = [os.path.join(temp_folder, f"{file_name}.part{i}") for i in range(total_chunks)]
         downloaded_size = self.calculate_downloaded_size(chunk_files)
+
         with tqdm(total=file_size, unit="B", unit_scale=True, desc="Overall Progress", position=0, initial=downloaded_size) as overall_pbar:
             futures = []
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
@@ -129,8 +132,22 @@ class Downloader:
                     end_byte = min(start_byte + chunk_size_bytes - 1, file_size - 1)
                     chunk_file_path = chunk_files[i]
                     futures.append(executor.submit(self.download_chunk, session, url, i, chunk_file_path, start_byte, end_byte, overall_pbar))
+                
+                last_time = None
                 for future in as_completed(futures):
                     future.result()
+                    current_progress = overall_pbar.n
+                    elapsed_time = overall_pbar.format_dict['elapsed']
+                    speed = current_progress / elapsed_time if elapsed_time > 0 else 0
+                    remaining_time = (file_size - current_progress) / speed if speed > 0 else float('inf')
+
+                    if self.progress_callback:
+                        self.progress_callback(
+                            progress=current_progress / file_size * 100,
+                            speed=speed,
+                            eta=str(timedelta(seconds=int(remaining_time)))
+                        )
+
         self.merge_chunks(chunk_files, final_file_path)
         if os.path.exists(temp_folder):
             for root, dirs, files in os.walk(temp_folder, topdown=False):
@@ -140,6 +157,6 @@ class Downloader:
                     os.rmdir(os.path.join(root, name))
             os.rmdir(temp_folder)
 
-def download_file(url, download_dir=".", chunk_size_mb=20, max_workers=None, proxy_mode="system", proxies=None):
-    downloader = Downloader(download_dir, chunk_size_mb, max_workers, proxy_mode, proxies)
+def download_file(url, download_dir=".", chunk_size_mb=20, max_workers=32, proxy_mode="system", proxies=None, progress_callback=None):
+    downloader = Downloader(download_dir, chunk_size_mb, max_workers, proxy_mode, proxies, progress_callback)
     downloader.download(url)
