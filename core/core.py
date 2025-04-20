@@ -8,7 +8,7 @@ from tqdm import tqdm
 import urllib3
 
 class Downloader:
-    def __init__(self, download_dir=".", chunk_size_mb=20, max_workers=20, proxy_mode="system", proxies=None):
+    def __init__(self, download_dir=".", chunk_size_mb=20, max_workers=32, proxy_mode="system", proxies=None):
         self.download_dir = download_dir
         self.chunk_size_mb = chunk_size_mb
         self.max_workers = max_workers
@@ -177,3 +177,7 @@ class Downloader:
                     os.rmdir(os.path.join(root, name))
             os.rmdir(temp_folder)
             print(f"Temporary folder '{temp_folder}' deleted.")
+
+def download_file(url, download_dir=".", chunk_size_mb=20, max_workers=32, proxy_mode="system", proxies=None):
+    Download = Downloader(download_dir, chunk_size_mb, max_workers, proxy_mode, proxies)
+    Download.download(url)
