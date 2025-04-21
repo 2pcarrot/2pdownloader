@@ -6,7 +6,8 @@
 - Accelerates downloads using multi-threading
 - Supports resuming interrupted downloads
 - Automatically merges downloaded file segments
-- Supports proxy settings
+- Supports proxy settings (automatic detection and manual configuration)
+- Supports saving and loading download state for resumption
 
 ## Usage
 1. Clone the repository:
@@ -18,12 +19,28 @@
    ```bash
    pip install -r requirements.txt
    ```
-3. Use the `download_file` function to download files:
+3. Use the following functions for downloading files:
    ```python
-   from core.core import download_file
+   from core.core import reg_downloader, start_downloader, stop_downloader, get_return
 
+   # Register a new downloader instance
+   downloader = reg_downloader(
+       download_dir="downloads",
+       chunk_size_mb=20,
+       max_workers=10,
+       proxy_mode="system"  # Options: "system", "manual"
+   )
+
+   # Start the download
    url = "https://example.com/file.zip"
-   download_file(url, dest_folder="downloads", chunk_size_mb=20, max_workers=10)
+   start_downloader(url, downloader)
+
+   # Get download progress
+   n_downloaded, total_size, eta = get_return(downloader)
+   print(f"Downloaded: {n_downloaded} / {total_size} bytes, Estimated Time Remaining: {eta} seconds")
+
+   # Optionally, stop the download
+   stop_downloader(downloader)
    ```
 
 ## Future Development
@@ -35,6 +52,9 @@
 
 ## Contribution
 Contributions are welcome! Please submit a Pull Request or report issues.
+
+### Acknowledgment
+This `README.md` was created with the assistance of **GitHub Copilot**, an AI-powered code assistant, to ensure clarity and accuracy in describing the functionality of the project.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
