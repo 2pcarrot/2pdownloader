@@ -22,7 +22,7 @@ class Downloader:
         self.stop_flag = True
 
     def get_pbar(self):
-        return self.overall_pbar.format_dict
+        return self.overall_pbar.format_dict if self.overall_pbar else None
 
     def _detect_proxy(self):
         proxies = {}
@@ -191,4 +191,4 @@ def stop_downloader(downloader):
 
 def get_return(downloader):
     returns = downloader.get_pbar()
-    return returns['n'], returns['total'], (returns['total'] - returns['n']) // int(returns['rate'] if returns['rate'] else 0)
+    return (returns['n'], returns['total'], (returns['total'] - returns['n']) // int(returns['rate']) if returns['rate'] else 0) if returns else (-1, -1, -1)
