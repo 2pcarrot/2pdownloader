@@ -21,26 +21,26 @@
    ```
 3. Use the following functions for downloading files:
    ```python
-   from core.core import reg_downloader, start_downloader, stop_downloader, get_return
+   from core import Downloader
 
-   # Register a new downloader instance
-   downloader = reg_downloader(
+   # Initialize a downloader instance
+   downloader = Downloader(
+       url="https://example.com/file.zip",
        download_dir="downloads",
-       chunk_size_mb=20,
-       max_workers=10,
+       chunk_size_mb=20,  # Size of each chunk in MB
+       max_workers=10,    # Maximum number of worker threads
        proxy_mode="system"  # Options: "system", "manual"
    )
 
    # Start the download
-   url = "https://example.com/file.zip"
-   start_downloader(url, downloader)
+   downloader.download()
 
    # Get download progress
-   n_downloaded, total_size, eta = get_return(downloader)
+   n_downloaded, total_size, eta = downloader.get_pbar()
    print(f"Downloaded: {n_downloaded} / {total_size} bytes, Estimated Time Remaining: {eta} seconds")
 
    # Optionally, stop the download
-   stop_downloader(downloader)
+   downloader.stop()
    ```
 
 ## Future Development
