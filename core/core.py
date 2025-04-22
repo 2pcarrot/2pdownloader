@@ -9,7 +9,8 @@ import urllib3
 
 
 class Downloader:
-    def __init__(self, download_dir=".", chunk_size_mb=20, max_workers=None, proxy_mode="system", proxies=None):
+    def __init__(self, url, download_dir=".", chunk_size_mb=20, max_workers=None, proxy_mode="system", proxies=None):
+        self.url = url
         self.download_dir = download_dir
         self.chunk_size_mb = chunk_size_mb
         self.max_workers = max_workers or (os.cpu_count() * 2)
@@ -22,7 +23,8 @@ class Downloader:
         self.stop_flag = True
 
     def get_pbar(self):
-        return self.overall_pbar.format_dict if self.overall_pbar else None
+        returns = self.overall_pbar.format_dict if self.overall_pbar else None
+        return (returns['n'], returns['total'], (returns['total'] - returns['n']) // int(returns['rate']) if returns['rate'] else 0) if returns else (-1, -1, -1)
 
     def _detect_proxy(self):
         proxies = {}
@@ -45,7 +47,7 @@ class Downloader:
             proxies["https"] = https_proxy
         return proxies if proxies else None
 
-    def parse_filename_from_headers(self, headers, url):
+    def parse_filename_from_headers(self, headers):
         content_disposition = headers.get("Content-Disposition", "")
         if 'filename=' in content_disposition:
             if "filename*" in content_disposition:
@@ -55,7 +57,7 @@ class Downloader:
             elif "filename=" in content_disposition:
                 file_name = content_disposition.split("filename=")[1].strip('"')
                 return unquote(file_name)
-        parsed_url = urlparse(url)
+        parsed_url = urlparse(self.url)
         file_name = os.path.basename(parsed_url.path)
         return unquote(file_name)
 
@@ -66,10 +68,10 @@ class Downloader:
                 return json.load(f)
         return None
 
-    def save_config(self, temp_folder, file_name, url):
+    def save_config(self, temp_folder, file_name):
         state_file = os.path.join(temp_folder, f"{file_name}.state")
         config = {
-            "url": url,
+            "url": self.url,
             "chunk_size_bytes": self.chunk_size_mb * 1024 * 1024,
             "max_workers": self.max_workers
         }
@@ -79,7 +81,7 @@ class Downloader:
     def calculate_downloaded_size(self, chunk_files):
         return sum(os.path.getsize(chunk_file) for chunk_file in chunk_files if os.path.exists(chunk_file))
 
-    def download_chunk(self, session, url, chunk_index, chunk_file_path, start_byte, end_byte, retries=3):
+    def download_chunk(self, session, chunk_index, chunk_file_path, start_byte, end_byte, retries=3):
         downloaded_size = os.path.getsize(chunk_file_path) if os.path.exists(chunk_file_path) else 0
         remaining_bytes = end_byte - (start_byte + downloaded_size) + 1
         if remaining_bytes <= 0:
@@ -91,7 +93,7 @@ class Downloader:
                 print(f"Stopping chunk {chunk_index}...")
                 return
             try:
-                response = session.get(url, headers=headers, stream=True, proxies=self.proxies, timeout=60, verify=False)
+                response = session.get(self.url, headers=headers, stream=True, proxies=self.proxies, timeout=60, verify=False)  # 使用 self.url
                 response.raise_for_status()
                 with open(chunk_file_path, "ab") as f:
                     for chunk in response.iter_content(chunk_size=65536):
@@ -119,12 +121,12 @@ class Downloader:
                     final_file.write(part_file.read())
                 os.remove(chunk_file)
 
-    def download(self, url):
+    def download(self):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         session = requests.Session()
-        response = session.head(url, allow_redirects=True, proxies=self.proxies)
+        response = session.head(self.url, allow_redirects=True, proxies=self.proxies)
         response.raise_for_status()
-        file_name = self.parse_filename_from_headers(response.headers, url)
+        file_name = self.parse_filename_from_headers(response.headers)
         file_size = int(response.headers.get("Content-Length", 0))
         temp_folder = os.path.join(self.download_dir, os.path.splitext(file_name)[0])
         os.makedirs(temp_folder, exist_ok=True)
@@ -134,7 +136,7 @@ class Downloader:
             self.chunk_size_mb = config["chunk_size_bytes"] // (1024 * 1024)
             self.max_workers = config["max_workers"]
         else:
-            self.save_config(temp_folder, file_name, url)
+            self.save_config(temp_folder, file_name)
         chunk_size_bytes = self.chunk_size_mb * 1024 * 1024
         total_chunks = (file_size + chunk_size_bytes - 1) // chunk_size_bytes
         chunk_files = [os.path.join(temp_folder, f"{file_name}.part{i}") for i in range(total_chunks)]
@@ -159,7 +161,7 @@ class Downloader:
                 start_byte = i * chunk_size_bytes
                 end_byte = min(start_byte + chunk_size_bytes - 1, file_size - 1)
                 chunk_file_path = chunk_files[i]
-                futures.append(executor.submit(self.download_chunk, session, url, i, chunk_file_path, start_byte, end_byte))
+                futures.append(executor.submit(self.download_chunk, session, i, chunk_file_path, start_byte, end_byte))
             for future in as_completed(futures):
                 if self.stop_flag:
                     print("Stopping during future completion...")
@@ -178,17 +180,3 @@ class Downloader:
                 for name in dirs:
                     os.rmdir(os.path.join(root, name))
             os.rmdir(temp_folder)
-
-def reg_downloader(download_dir=".", chunk_size_mb=20, max_workers=None, proxy_mode="system", proxies=None):
-    downloader = Downloader(download_dir, chunk_size_mb, max_workers, proxy_mode, proxies)
-    return downloader
-
-def start_downloader(url, downloader):
-    downloader.download(url)
-
-def stop_downloader(downloader):
-    downloader.stop()
-
-def get_return(downloader):
-    returns = downloader.get_pbar()
-    return (returns['n'], returns['total'], (returns['total'] - returns['n']) // int(returns['rate']) if returns['rate'] else 0) if returns else (-1, -1, -1)
