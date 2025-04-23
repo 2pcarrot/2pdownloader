@@ -38,9 +38,6 @@
    # Get download progress
    n_downloaded, total_size, eta = downloader.get_pbar()
    print(f"Downloaded: {n_downloaded} / {total_size} bytes, Estimated Time Remaining: {eta} seconds")
-
-   # Optionally, stop the download
-   downloader.stop()
    ```
 
 ## Future Development
