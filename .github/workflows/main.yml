@@ -1,7 +1,8 @@
 name: Build for all platforms and architectures
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动触发工作流
+
 
 jobs:
   build:
@@ -37,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.9"
 
       - name: Install dependencies
         run: |
@@ -56,9 +57,12 @@ jobs:
           nuitka --standalone --enable-plugin=tk-inter app.py
           Compress-Archive -Path app.dist\* -DestinationPath app-${{ matrix.target }}.zip
 
-      - name: Check if artifact exists
+      - name: Verify artifact exists
         run: |
-          ls -lh app-${{ matrix.target }}.* || echo "File not found!"
+          if [ ! -f "app-${{ matrix.target }}.tar.gz" ] && [ ! -f "app-${{ matrix.target }}.zip" ]; then
+            echo "Error: Expected artifact not found!"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
