@@ -18,9 +18,13 @@ class Downloader:
         self.proxies = proxies if proxy_mode == "manual" else self._detect_proxy()
         self.stop_flag = False
         self.overall_pbar = None
+        self.complete_flag = False
 
-    def stop(self):
-        self.stop_flag = True
+    def is_completed(self):
+        return self.complete_flag
+
+    def stop(self,flag):
+        self.stop_flag = flag
 
     def get_pbar(self):
         returns = self.overall_pbar.format_dict if self.overall_pbar else None
@@ -137,11 +141,19 @@ class Downloader:
             self.max_workers = config["max_workers"]
         else:
             self.save_config(temp_folder, file_name)
+
         chunk_size_bytes = self.chunk_size_mb * 1024 * 1024
-        total_chunks = (file_size + chunk_size_bytes - 1) // chunk_size_bytes
+
+        if chunk_size_bytes >= file_size:
+            total_chunks = self.max_workers
+            chunk_size_bytes = file_size // total_chunks
+            remainder = file_size % total_chunks
+        else:
+            total_chunks = (file_size + chunk_size_bytes - 1) // chunk_size_bytes
+            remainder = 0
+
         chunk_files = [os.path.join(temp_folder, f"{file_name}.part{i}") for i in range(total_chunks)]
         downloaded_size = self.calculate_downloaded_size(chunk_files)
-
 
         self.overall_pbar = tqdm(
             total=file_size,
@@ -158,10 +170,16 @@ class Downloader:
                 if self.stop_flag:
                     print("Stopping download process...")
                     return
+
                 start_byte = i * chunk_size_bytes
                 end_byte = min(start_byte + chunk_size_bytes - 1, file_size - 1)
+
+                if i == total_chunks - 1 and remainder > 0:
+                    end_byte += remainder
+
                 chunk_file_path = chunk_files[i]
                 futures.append(executor.submit(self.download_chunk, session, i, chunk_file_path, start_byte, end_byte))
+
             for future in as_completed(futures):
                 if self.stop_flag:
                     print("Stopping during future completion...")
@@ -180,3 +198,4 @@ class Downloader:
                 for name in dirs:
                     os.rmdir(os.path.join(root, name))
             os.rmdir(temp_folder)
+        self.complete_flag = True
