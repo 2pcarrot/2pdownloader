@@ -31,12 +31,6 @@ jobs:
             target: windows-arm64
 
     steps:
-      - name: Clear GitHub Actions Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: clear-cache-${{ runner.os }}-${{ github.run_id }}
-
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -79,7 +73,7 @@ jobs:
           fi
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v4
         with:
           name: app-${{ matrix.target }}
           path: |
@@ -90,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
