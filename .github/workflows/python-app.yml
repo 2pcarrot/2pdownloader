@@ -3,7 +3,6 @@ name: Build for all platforms and architectures
 on:
   workflow_dispatch: # 允许手动触发工作流
 
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -78,8 +77,7 @@ jobs:
         with:
           name: app-${{ matrix.target }}
           path: |
-            app-${{ matrix.target }}.tar.gz
-            app-${{ matrix.target }}.zip
+            ${{ matrix.os == 'windows-latest' && 'app-${{ matrix.target }}.zip' || 'app-${{ matrix.target }}.tar.gz' }}
 
   release:
     needs: build
