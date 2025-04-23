@@ -42,20 +42,26 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install nuitka
           pip install -r requirements.txt
 
-      - name: Build with Nuitka (Linux/macOS)
+      - name: Build with Nuitka
+        uses: Nuitka/Nuitka-Action@v1
+        with:
+          python-version: "3.9"
+          source: app.py
+          output-dir: app.dist
+          standalone: true
+          plugin-enable: tk-inter
+
+      - name: Package Artifact (Linux/macOS)
         if: matrix.os != 'windows-latest'
         run: |
-          nuitka --standalone --enable-plugin=tk-inter app.py
           tar -czf app-${{ matrix.target }}.tar.gz app.dist/
 
-      - name: Build with Nuitka (Windows)
+      - name: Package Artifact (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          nuitka --standalone --enable-plugin=tk-inter app.py
           Compress-Archive -Path app.dist\* -DestinationPath app-${{ matrix.target }}.zip
 
       - name: Verify artifact exists
