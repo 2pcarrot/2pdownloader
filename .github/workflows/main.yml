@@ -1,7 +1,10 @@
 name: Build for all platforms and architectures
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动触发工作流
+  push:
+    tags:
+      - "v*" # 当你推送带有版本号的标签时也会触发构建
 
 jobs:
   build:
@@ -37,7 +40,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
@@ -56,13 +59,17 @@ jobs:
           nuitka --standalone --enable-plugin=tk-inter app.py
           Compress-Archive -Path app.dist\* -DestinationPath app-${{ matrix.target }}.zip
 
+      - name: Check if artifact exists
+        run: |
+          ls -lh app-${{ matrix.target }}.* || echo "File not found!"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: app-${{ matrix.target }}
           path: |
-            app-${{ matrix.target }}.*
-            app.dist/
+            app-${{ matrix.target }}.tar.gz
+            app-${{ matrix.target }}.zip
 
   release:
     needs: build
