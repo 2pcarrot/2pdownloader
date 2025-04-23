@@ -1,7 +1,7 @@
 name: Build for all platforms and architectures
 
 on:
-  workflow_dispatch: # 允许手动触发工作流
+  workflow_dispatch:
 
 jobs:
   build:
@@ -34,63 +34,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
       - name: Build with Nuitka
-        uses: Nuitka/Nuitka-Action@v1
+        uses: Nuitka/Nuitka-Action@main
         with:
-          python-version: "3.9"
-          source: app.py
-          output-dir: app.dist
-          standalone: true
-          plugin-enable: tk-inter
-
-      - name: Package Artifact (Linux/macOS)
-        if: matrix.os != 'windows-latest'
-        run: |
-          tar -czf app-${{ matrix.target }}.tar.gz app.dist/
-
-      - name: Package Artifact (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          Compress-Archive -Path app.dist\* -DestinationPath app-${{ matrix.target }}.zip
-
-      - name: Verify artifact exists
-        run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            if (-Not (Test-Path "app-${{ matrix.target }}.zip")) {
-              Write-Host "Error: Expected artifact not found!"
-              exit 1
-            }
-          else
-            if [ ! -f "app-${{ matrix.target }}.tar.gz" ]; then
-              echo "Error: Expected artifact not found!"
-              exit 1
-            fi
-          fi
+          nuitka-version: main
+          script-name: app.py
+          mode: standalone
+          enable-plugins: tk-inter
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: app-${{ matrix.target }}
           path: |
-            ${{ matrix.os == 'windows-latest' && 'app-${{ matrix.target }}.zip' || 'app-${{ matrix.target }}.tar.gz' }}
+            app.dist/
+          if-no-files-found: error
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           path: artifacts
 
