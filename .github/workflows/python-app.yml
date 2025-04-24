@@ -1,10 +1,10 @@
-name: Build and Release 2pdownloader
+name: Build 2pdownloader
 
 on:
   workflow_dispatch:
 
 env:
-  VERSION: v0.0.1-beta1 # 定义版本号
+  VERSION: v0.0.1-beta1
 
 jobs:
   build-windows:
@@ -27,17 +27,14 @@ jobs:
           pip install nuitka
           choco install ccache
 
-      - name: Download and Install Dependency Walker
-        run: |
-          $url = "https://dependencywalker.com/depends22_x64.zip"
-          $output = "depends22_x64.zip"
-          Invoke-WebRequest -Uri $url -OutFile $output
-          Expand-Archive -Path $output -DestinationPath "C:\Tools\DependencyWalker"
-          setx NUITKA_DEPENDS_TOOL "C:\Tools\DependencyWalker\depends.exe"
-
       - name: Build with Nuitka
         run: |
-          nuitka --standalone --enable-plugin=tk-inter app.py
+          nuitka --standalone --enable-plugin=tk-inter --windows-disable-console --assume-yes-for-downloads app.py
+
+      - name: Debug build output
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path app.dist -Recurse
 
       - name: Validate build output
         shell: pwsh
