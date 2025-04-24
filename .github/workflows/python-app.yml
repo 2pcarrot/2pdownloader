@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: v0.0.1-beta1 # 定义版本号
+  VERSION: v0.0.1-beta1
 
 jobs:
   build-windows:
@@ -24,11 +24,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka # 安装 Nuitka
+          pip install nuitka
+          choco install ccache
 
       - name: Build with Nuitka
         run: |
-          nuitka --standalone --enable-plugin=tk-inter app.py
+          nuitka --standalone --enable-plugin=tk-inter --disable-ccache app.py
           Compress-Archive -Path app.dist\* -DestinationPath 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
 
       - name: Upload artifacts
@@ -54,11 +55,13 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka # 安装 Nuitka
+          pip install nuitka
+          # 确保 ccache 已正确安装
+          brew install ccache
 
       - name: Build with Nuitka
         run: |
-          nuitka --standalone --enable-plugin=tk-inter app.py
+          nuitka --standalone --enable-plugin=tk-inter --disable-ccache app.py
           mv app.dist 2pdownloader.app
           chmod u+x 2pdownloader.app/Contents/MacOS/app
 
@@ -90,13 +93,13 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1-mesa
+          sudo apt-get install -y libegl1-mesa ccache
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka # 安装 Nuitka
+          pip install nuitka
 
       - name: Build with Nuitka
         run: |
-          nuitka --standalone --enable-plugin=tk-inter app.py
+          nuitka --standalone --enable-plugin=tk-inter --disable-ccache app.py
           tar -czf 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.tar.gz app.dist
 
       - name: Upload artifacts
