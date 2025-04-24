@@ -24,18 +24,14 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close()"
-          $VERSION = gc version.txt
-          Write-Host "VERSION=$VERSION"
-          echo "VERSION=$VERSION" >> $env:GITHUB_ENV
-          del version.txt
-          python deploy.py
+          nuitka --standalone --enable-plugin=tk-inter app.py
+          Compress-Archive -Path app.dist\* -DestinationPath 2pdownloader-${{ matrix.architecture }}.zip
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 2pdownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
-          path: dist/2pdownloader.dist
+          name: 2pdownloader-Windows-${{ matrix.architecture }}
+          path: 2pdownloader-${{ matrix.architecture }}.zip
 
   build-macos:
     strategy:
@@ -57,27 +53,20 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
-          version=$(sed -n '4p' version.txt)
-          echo "VERSION=${version}" >> "$GITHUB_ENV"
-          rm -rf version.txt
-          python3 deploy.py
-          chmod u+x "dist/2pdownloader.app/Contents/MacOS/2pdownloader"
-          rm -rf "dist/2pdownloader.build"
-          rm -rf "dist/2pdownloader.dist"
-          mv "dist/2pdownloader.app" "dist/2pdownloader.app"
+          nuitka --standalone --enable-plugin=tk-inter app.py
+          mv app.dist 2pdownloader.app
+          chmod u+x 2pdownloader.app/Contents/MacOS/app
 
       - name: Create DMG
         run: |
-          ln -s /Applications dist/Applications
-          sleep 1
-          hdiutil create -srcfolder "dist/" -volname "2pdownloader" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "2pdownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          ln -s /Applications 2pdownloader.app/Applications
+          hdiutil create -srcfolder 2pdownloader.app -volname "2pdownloader" -fs HFS+ -format UDZO -size 400m 2pdownloader-${{ matrix.architecture }}.dmg
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 2pdownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: 2pdownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+          name: 2pdownloader-macOS-${{ matrix.architecture }}
+          path: 2pdownloader-${{ matrix.architecture }}.dmg
 
   build-ubuntu:
     strategy:
@@ -101,14 +90,11 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
-          version=$(sed -n '4p' version.txt)
-          echo "VERSION=${version}" >> "$GITHUB_ENV"
-          rm -rf version.txt
-          python deploy.py
+          nuitka --standalone --enable-plugin=tk-inter app.py
+          tar -czf 2pdownloader-${{ matrix.architecture }}.tar.gz app.dist
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 2pdownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
-          path: dist/2pdownloader.dist
+          name: 2pdownloader-Linux-${{ matrix.architecture }}
+          path: 2pdownloader-${{ matrix.architecture }}.tar.gz
