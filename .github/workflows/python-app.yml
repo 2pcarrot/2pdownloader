@@ -50,6 +50,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
+          pip install nuitka
 
       - name: Build with Nuitka
         run: |
