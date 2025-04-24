@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: v0.0.1-beta1
+  VERSION: v0.0.1-beta1 # Define version number
 
 jobs:
   build-windows:
@@ -46,6 +46,7 @@ jobs:
 
       - name: Package build output
         run: |
+          # Compress only the contents of app.dist without nesting
           cd app.dist
           Compress-Archive -Path * -DestinationPath ../2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
 
@@ -83,6 +84,7 @@ jobs:
 
       - name: Create DMG
         run: |
+          # Create DMG directly without nesting
           mkdir dmg
           ln -s /Applications dmg/Applications
           mv 2pdownloader.app dmg/
@@ -119,8 +121,17 @@ jobs:
         run: |
           nuitka --standalone --enable-plugin=tk-inter app.py
 
+      - name: Validate build output
+        shell: bash
+        run: |
+          if [ ! -f "app.dist/app.bin" ]; then
+              echo "Build failed: app.bin not found in app.dist"
+              exit 1
+          fi
+
       - name: Package build output
         run: |
+          # Directly create .tar.gz without nesting
           cd app.dist
           tar -czf ../2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.tar.gz *
 
