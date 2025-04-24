@@ -1,0 +1,64 @@
+name: Build and Release 2pdownloader
+
+on:
+  workflow_dispatch:
+
+env:
+  VERSION: v0.0.1-beta1 # 定义版本号
+
+jobs:
+  build-windows:
+    strategy:
+      matrix:
+        architecture: [x86_64, arm64]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install --timeout=300 --requirement requirements.txt
+          pip install nuitka
+          choco install ccache
+
+      - name: Download and Install Dependency Walker
+        run: |
+          $url = "https://dependencywalker.com/depends22_x64.zip"
+          $output = "depends22_x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath "C:\Tools\DependencyWalker"
+          setx NUITKA_DEPENDS_TOOL "C:\Tools\DependencyWalker\depends.exe"
+
+      - name: Build with Nuitka
+        run: |
+          nuitka --standalone --enable-plugin=tk-inter --show-progress --show-modules app.py
+
+      - name: Debug build output
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path app.dist -Recurse
+
+      - name: Validate build output
+        shell: pwsh
+        run: |
+          if (-Not (Test-Path "app.dist/app.exe")) {
+              Write-Error "Build failed: app.exe not found in app.dist"
+              exit 1
+          }
+
+      - name: Package build output
+        run: |
+          cd app.dist
+          Compress-Archive -Path * -DestinationPath ../2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2pdownloader-${{ env.VERSION }}-Windows-${{ matrix.architecture }}
+          path: 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
