@@ -261,6 +261,8 @@ class DownloaderGUI:
                 task_info["running"] = False
                 downloader.stop(True)
 
+            time.sleep(3)
+            
             filename = task_info["filename"]
             folder_name = os.path.splitext(filename)[0]
             folder_path = os.path.join(task_info["download_dir"], folder_name)
