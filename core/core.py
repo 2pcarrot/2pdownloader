@@ -144,7 +144,7 @@ class Downloader:
 
         chunk_size_bytes = self.chunk_size_mb * 1024 * 1024
 
-        if chunk_size_bytes >= file_size:
+        if (chunk_size_bytes * self.max_workers) >= file_size:
             total_chunks = self.max_workers
             chunk_size_bytes = file_size // total_chunks
             remainder = file_size % total_chunks
