@@ -1,10 +1,10 @@
-name: Build 2pdownloader
+name: Build and Release 2pdownloader
 
 on:
   workflow_dispatch:
 
 env:
-  VERSION: v0.0.1-beta1
+  VERSION: v0.0.1-beta1 # 定义版本号
 
 jobs:
   build-windows:
@@ -25,6 +25,7 @@ jobs:
         run: |
           pip install --timeout=300 -r requirements.txt
           pip install nuitka
+          # 确保 ccache 已正确安装
           choco install ccache
 
       - name: Build with Nuitka
@@ -63,12 +64,14 @@ jobs:
         run: |
           nuitka --standalone --enable-plugin=tk-inter --disable-ccache app.py
           mv app.dist 2pdownloader.app
-          chmod u+x 2pdownloader.app/Contents/MacOS/app
+          chmod u+x 2pdownloader.app/app.bin # 修正路径
 
       - name: Create DMG
         run: |
-          ln -s /Applications 2pdownloader.app/Applications
-          hdiutil create -srcfolder 2pdownloader.app -volname "2pdownloader" -fs HFS+ -format UDZO -size 400m 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.dmg
+          mkdir dmg
+          ln -s /Applications dmg/Applications
+          mv 2pdownloader.app dmg/
+          hdiutil create -srcfolder dmg -volname "2pdownloader" -fs HFS+ -format UDZO -size 400m 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.dmg
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
