@@ -3,6 +3,9 @@ name: Build 2pdownloader
 on:
   workflow_dispatch:
 
+env:
+  VERSION: v0.0.1-beta1
+
 jobs:
   build-windows:
     strategy:
@@ -25,13 +28,13 @@ jobs:
       - name: Build with Nuitka
         run: |
           nuitka --standalone --enable-plugin=tk-inter app.py
-          Compress-Archive -Path app.dist\* -DestinationPath 2pdownloader-${{ matrix.architecture }}.zip
+          Compress-Archive -Path app.dist\* -DestinationPath 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 2pdownloader-Windows-${{ matrix.architecture }}
-          path: 2pdownloader-${{ matrix.architecture }}.zip
+          name: 2pdownloader-${{ env.VERSION }}-Windows-${{ matrix.architecture }}
+          path: 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
 
   build-macos:
     strategy:
@@ -61,13 +64,13 @@ jobs:
       - name: Create DMG
         run: |
           ln -s /Applications 2pdownloader.app/Applications
-          hdiutil create -srcfolder 2pdownloader.app -volname "2pdownloader" -fs HFS+ -format UDZO -size 400m 2pdownloader-${{ matrix.architecture }}.dmg
+          hdiutil create -srcfolder 2pdownloader.app -volname "2pdownloader" -fs HFS+ -format UDZO -size 400m 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.dmg
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 2pdownloader-macOS-${{ matrix.architecture }}
-          path: 2pdownloader-${{ matrix.architecture }}.dmg
+          name: 2pdownloader-${{ env.VERSION }}-macOS-${{ matrix.architecture }}
+          path: 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.dmg
 
   build-ubuntu:
     strategy:
@@ -92,10 +95,10 @@ jobs:
       - name: Build with Nuitka
         run: |
           nuitka --standalone --enable-plugin=tk-inter app.py
-          tar -czf 2pdownloader-${{ matrix.architecture }}.tar.gz app.dist
+          tar -czf 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.tar.gz app.dist
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 2pdownloader-Linux-${{ matrix.architecture }}
-          path: 2pdownloader-${{ matrix.architecture }}.tar.gz
+          name: 2pdownloader-${{ env.VERSION }}-Linux-${{ matrix.architecture }}
+          path: 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.tar.gz
