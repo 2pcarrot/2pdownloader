@@ -23,19 +23,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --timeout=300 -r requirements.txt
+          pip install --timeout=300 --requirement requirements.txt
           pip install nuitka
           choco install ccache
 
-      - name: Install Dependency Walker
+      - name: Download and Install Dependency Walker
         run: |
           $url = "https://dependencywalker.com/depends22_x64.zip"
           $output = "depends22_x64.zip"
           Invoke-WebRequest -Uri $url -OutFile $output
           Expand-Archive -Path $output -DestinationPath "C:\Tools\DependencyWalker"
-
-      - name: Set Dependency Walker Path
-        run: |
           setx NUITKA_DEPENDS_TOOL "C:\Tools\DependencyWalker\depends.exe"
 
       - name: Build with Nuitka
@@ -45,14 +42,15 @@ jobs:
       - name: Validate build output
         shell: pwsh
         run: |
-          if (-Not (Test-Path "app.dist\app.exe")) {
-              Write-Output "Build failed: app.exe not found in app.dist"
+          if (-Not (Test-Path "app.dist\\app.exe")) {
+              Write-Error "Build failed: app.exe not found in app.dist"
               exit 1
           }
 
       - name: Package build output
         run: |
-          Compress-Archive -Path app.dist\* -DestinationPath 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
+          cd app.dist
+          Compress-Archive -Path * -DestinationPath ../2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.zip
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -76,7 +74,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --timeout=300 -r requirements.txt
+          pip install --timeout=300 --requirement requirements.txt
           pip install nuitka
           brew install ccache
 
@@ -117,13 +115,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libegl1-mesa ccache
-          pip install --timeout=300 -r requirements.txt
+          pip install --timeout=300 --requirement requirements.txt
           pip install nuitka
 
       - name: Build with Nuitka
         run: |
           nuitka --standalone --enable-plugin=tk-inter app.py
-          tar -czf 2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.tar.gz app.dist
+
+      - name: Package build output
+        run: |
+          cd app.dist
+          tar -czf ../2pdownloader-${{ env.VERSION }}-${{ matrix.architecture }}.tar.gz *
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
