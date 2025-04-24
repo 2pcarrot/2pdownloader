@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: v0.0.1-beta1
+  VERSION: v0.0.1-beta1 # 定义版本号
 
 jobs:
   build-windows:
@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install --timeout=300 nuitka
+          pip install nuitka # 安装 Nuitka
 
       - name: Build with Nuitka
         run: |
@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka
+          pip install nuitka # 安装 Nuitka
 
       - name: Build with Nuitka
         run: |
@@ -92,6 +92,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libegl1-mesa
           pip install --timeout=300 -r requirements.txt
+          pip install nuitka # 安装 Nuitka
 
       - name: Build with Nuitka
         run: |
