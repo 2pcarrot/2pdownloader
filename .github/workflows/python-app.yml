@@ -43,10 +43,12 @@ jobs:
           nuitka --standalone --enable-plugin=tk-inter app.py
 
       - name: Validate build output
+        shell: pwsh
         run: |
-          if not exist app.dist\app.exe (
-            echo "Build failed: app.exe not found in app.dist" && exit 1
-          )
+          if (-Not (Test-Path "app.dist\app.exe")) {
+              Write-Output "Build failed: app.exe not found in app.dist"
+              exit 1
+          }
 
       - name: Package build output
         run: |
